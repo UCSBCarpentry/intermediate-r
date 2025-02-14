@@ -1,0 +1,74 @@
+---
+title: "getting_stationInventory"
+format: html
+editor: visual
+---
+
+## Scenario
+
+You want to download hictoric monthly Precipitation data from [NOAA's Global Historical Climatology Network monthly (GHCNm)](https://www.ncei.noaa.gov/products/land-based-station/global-historical-climatology-network-monthly).
+
+You only need data for certain weather stations, not all the weather stations in the world. You see in their [website](https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/) that you can download the complete dataset from the archive/ folder, which has a size of 223 MB compressed and around 4.5 GB uncompressed, or you can download a file for each weather station from the access/ folder.
+
+The first option will take you a long time, and can be troublesome to have the entire dataset that you don't need. Therefore, you go with option 2, but you want to do this efficiently using R, instead of downloading each individual file by clicking in the browser.
+
+For the sake of time and demonstration, we will only be downloading data from 3 small countries: Botswana (BC), Honduras (HO), and Romania (RO).
+
+## Getting the list of weather stations
+
+Before starting to download the precipitation data, let's first read the inventory of weather stations available at (<https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/doc/ghcn-m_v4_prcp_inventory.txt>). This will give us a list of of all weather stations worldwide, along with its identifier (which contains the country where it's located), the state/province where it's located, and the first and last years for which it contains data.
+
+```{r}
+library(tidyverse)
+library(tictoc)
+
+# Download Inventory file
+download.file(
+  url = "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/doc/ghcn-m_v4_prcp_inventory.txt",
+  destfile = "data/raw/ghcn-m_v4_prcp_inventory.txt"
+              )
+
+# Read fixed-width file
+station_inventory <- read_fwf(
+  file = "data/raw/ghcn-m_v4_prcp_inventory.txt")
+
+# Rename columns
+colnames(stations_inventory) <- c("stationId", "latitude", "longitude",
+                                  "elevation","state", "stationName",
+                                  "wmoId", "firstYear", "secondYear")
+
+```
+
+Create a column with the country code, which is the first two characters of stationId
+
+```{r}
+#Create empty column
+station_inventory$country = ""
+
+tic()
+for (i in 1:nrow(station_inventory)) {
+  station_inventory[i, "country"] = 
+    substring(station_inventory[i, "stationId"], 1, 2)
+}
+toc()
+```
+
+But this is not the most efficient way of doing it. We can instead use a vectorized version of this function provided by the stringr package from the tidyverse.
+
+```{r}
+tic()
+station_inventory <- station_inventory %>% 
+  mutate(country = str_sub(stationId, 1, 2))
+toc()
+
+# This is the same as
+# station_inventory$country =  str_sub(station_inventory$stationId, 1, 2)
+```
+
+**TODO: Write here about vectorized operations in R**
+
+Now that we have our inventory of weather stations with column names and country codes, let's save it as a csv to reuse later.
+
+```{r}
+write_csv(station_inventory, file = "data/processed/stationsInventory.csv")
+```
