@@ -64,7 +64,6 @@ for (station in country_stations) {
 
 This looks good, so now let's do the loop to download the files
 ```{r}
-tic()
 noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
 folder_path <- "data/raw/weather_stations/"
 country_stations <- station_inventory %>% 
@@ -78,12 +77,10 @@ for (station in country_stations) {
     quiet = TRUE
   )
 }
-toc()
 ```
 There are multiple ways we can make this code for downloading data more efficient and readable. To start, let's see how to skip downloading data multiple times if the files are already in your computer. With this, we will learn about conditional statements, which are greatly useful when writing loops and functions.
 
 ```{r}
-tic()
 noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
 folder_path <- "data/raw/weather_stations/"
 country_stations <- station_inventory %>% 
@@ -105,7 +102,6 @@ for (station in country_stations) {
   )
   }
 }
-toc()
 ```
 If you have multiple conditions, you would use a combination of if, else if, and else statements like this:
 if () {
@@ -118,12 +114,10 @@ if () {
 
 Now, let's say you have thousands of files to download and you left your computer running a loop overnight. What happens if there is an error with one of the elements of your loop? Your code will crash and stop at the iteration where the error happened. This results in lost time, as the loop could have continued with iterations that had no errors.
 
-TO prevent our code to break when there's an error, we'll use the tryCatch() function inside our loop to catch any error and handle it in a particular way. To show how this works, we'll modify the second weather station in Romania, and then try to run our previous code.
-
 ```{r}
+# Breaking our data so we can show an error when trying to download data for a non-existant station
 station_inventory$stationId <- str_replace(station_inventory$stationId, "ROE00100898", "xxxxx")
 
-tic()
 noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
 folder_path <- "data/raw/weather_stations/"
 country_stations <- station_inventory %>% 
@@ -145,12 +139,12 @@ for (station in country_stations) {
   )
   }
 }
-toc()
 ```
+
+To prevent our code to break when there's an error, we'll use the tryCatch() function inside our loop to catch any error and handle it in a particular way. It works like and if-else if-else statement, where you say "If there is no error, do this. If there's an error do this other thing." To show how this works, we'll modify the second weather station in Romania, and then try to run our previous code.
 
 
 ```{r}
-tic()
 noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
 folder_path <- "data/raw/weather_stations/"
 country_stations <- station_inventory %>% 
@@ -163,18 +157,17 @@ for (station in country_stations) {
   
   # Check if file is already in our data path
   if (file.exists(file_path)) {
-    print(paste0("File ", station, ".csv already in folder. Skipping to next"))
+    next
   } else {
     
     tryCatch(
       download.file(url = paste0(noaa_url, station, ".csv"), destfile = file_path, quiet = TRUE), error = function(e) {
-        cat("\n There was an error trying to download data for stationId: ", station, "This is the error message: \n", conditionMessage(e)
-            )
+        print(paste0("There was an error trying to download data for stationId: ", station, ". Here is the error message: "))
+        print(conditionMessage(e))
       }
     )
   }
 }
-toc()
 ```
 
 But this loop is getting confusing, and this code only works if I want to download data for Romania. If I want to download data for another country I'd have to copy and paste, which doesn't comply with our DRY principle. To make our code modular, we'll start using functions. First we'll write a function to download one file and handle possible errors. Then, we'll write a function to filter the countries we are interested in and return the corresponding vector of stationIds. Then, we'll use the map() function to replace our loop and make our code more succinct.
@@ -188,20 +181,49 @@ my_function_name <- function(argument1, argument2) {
 my_function_name(4, 6)
 my_function_name(argument1 = 4, argument2 = 6)
 ```
+We'll create a function their requires only one argument, the stationId, and then downloads monthly precipitation data from ghcnm, handling possible errors.
+
 ```{r}
-download_noaa_ghcnm <- function(stationId) {
+single_download_noaa_ghcnm <- function(stationId) {
   noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
   folder_path <- "data/raw/weather_stations/"
-  error_message <- 
+  file_path <- paste0(folder_path, stationId, ".csv")
+  error_message <- paste0("There was an error trying to download data for stationId: ", stationId, ". Here is the error message: ")
+  if (file.exists(file_path)) {
+    
+  } else {
   tryCatch(
-      download.file(url = paste0(noaa_url, station, ".csv"), destfile = file_path, quiet = TRUE), error = function(e) {
-        cat("\n There was an error trying to download data for stationId: ", station, "This is the error message: \n", conditionMessage(e)
-            )
+      download.file(url = paste0(noaa_url, stationId, ".csv"), destfile = file_path, quiet = TRUE), error = function(e) {
+        print(error_message)
+        print(conditionMessage(e))
       }
     )
+  }
 }
 ```
 
+
+Then you can create a function that filters only those stations in the countries you are interested, and runs the download function for each station.
+
+```{r}
+country_download_noaa_ghcnm <- function(data_path, countries) {
+  station_inventory <- read_csv(data_path, show_col_types = FALSE)
+  stationid_vector <- station_inventory %>% 
+  filter(country %in% countries) %>% 
+  pull(stationId)
+  
+  for (i in stationid_vector) {
+    single_download_noaa_ghcnm(i)
+  }
+  return(paste0("Number of stations in ", countries, ": ", length(stationid_vector)))
+}
+```
+
+We can try it with another country, Honduras (HO):
+```{r}
+country_download_noaa_ghcnm("data/processed/stationsInventory.csv",
+                            c("HO", "RO", "BC"))
+```
 
 
 
