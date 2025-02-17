@@ -19,9 +19,17 @@ For the sake of time and demonstration, we will only be downloading data from 3 
 Before starting to download the precipitation data, let's first read the inventory of weather stations available at (<https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/doc/ghcn-m_v4_prcp_inventory.txt>). This will give us a list of of all weather stations worldwide, along with its identifier (which contains the country where it's located), the state/province where it's located, and the first and last years for which it contains data.
 
 ```{r}
+# Import libraries and create necessary directories
 library(tidyverse)
 library(tictoc)
 
+dir.create("data")
+dir.create("data/raw")
+dir.create("data/processed")
+dir.create("data/raw/weather_stations")
+```
+
+```{r}
 # Download Inventory file
 download.file(
   url = "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/doc/ghcn-m_v4_prcp_inventory.txt",
