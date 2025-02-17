@@ -41,10 +41,9 @@ station_inventory <- read_fwf(
   file = "data/raw/ghcn-m_v4_prcp_inventory.txt")
 
 # Rename columns
-colnames(stations_inventory) <- c("stationId", "latitude", "longitude",
+colnames(station_inventory) <- c("stationId", "latitude", "longitude",
                                   "elevation","state", "stationName",
                                   "wmoId", "firstYear", "secondYear")
-
 ```
 
 Create a column with the country code, which is the first two characters of stationId
