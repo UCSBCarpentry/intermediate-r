@@ -19,30 +19,30 @@ station_inventory <- read_csv(
 )
 ```
 
-Let's say we want to download only data for weather stations in Romania (RO). Let's filter and see how that looks like.
+Let's say we want to download only data for weather stations in Cyprus (CY). Let's filter and see how that looks like.
 
 ```{r}
 station_inventory %>% 
-  filter(country == "RO") %>% 
+  filter(country == "CY") %>% 
   str()
 ```
 
-Ok, so Romania has 38 weather stations, let's download data for all of these. The naive approach or brute-force way of doing this is copying and pasting code to download one file at a time, like this:
+Ok, so Cyprus has 10 weather stations, let's download data for all of these. The naive approach or brute-force way of doing this is copying and pasting code to download one file at a time, like this:
 
 ```{r}
 download.file(
-  url = "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/ROE00100829.csv",
-  destfile = "data/raw/weather_stations/ROE00100829.csv"
+  url = "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/CY000176090.csv",
+  destfile = "data/raw/weather_stations/CY000176090.csv"
 )
 
 download.file(
-  url = "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/ROE00100898.csv",
-  destfile = "data/raw/weather_stations/ROE00100898.csv"
+  url = "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/CYE00100065.csv",
+  destfile = "data/raw/weather_stations/CYE00100065.csv"
 )
 
 download.file(
-  url = "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/ROE00100899.csv",
-  destfile = "data/raw/weather_stations/ROE00100899.csv"
+  url = "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/CYE00100071.csv",
+  destfile = "data/raw/weather_stations/CYE00100071.csv"
 )
 ```
 
@@ -52,12 +52,12 @@ Furthermore, if you use a block of code or a loop more than twice and its purpos
 
 Besides enabling re-usability of your code which will result in less typing, functions will allow your code to be more concise and clear, will reduce possible errors, and allow your code to be modular, and then you can move parts of your code outside your analysis script.
 
-Let's start with writing a for loop to download all 38 files from Romania's weather stations.
+Let's start with writing a for loop to download all 10 files from Cyprus' weather stations.
 
 ```{r}
 noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
 # Check the urls that the loop and paste0 are creating
-country_stations <- station_inventory %>% filter(country == "RO") %>% pull(stationId)
+country_stations <- station_inventory %>% filter(country == "CY") %>% pull(stationId)
 for (station in country_stations) {
   print(paste0(noaa_url, station, ".csv"))
   }
@@ -69,7 +69,7 @@ This looks good, so now let's do the loop to download the files
 noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
 folder_path <- "data/raw/weather_stations/"
 country_stations <- station_inventory %>% 
-  filter(country == "RO") %>% 
+  filter(country == "CY") %>% 
   pull(stationId)
 
 for (station in country_stations) {
@@ -86,7 +86,7 @@ There are multiple ways we can make this code for downloading data more efficien
 noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
 folder_path <- "data/raw/weather_stations/"
 country_stations <- station_inventory %>% 
-  filter(country == "RO") %>% 
+  filter(country == "CY") %>% 
   pull(stationId)
 
 for (station in country_stations) {
@@ -117,16 +117,18 @@ If you have multiple conditions, you would use a combination of if, else if, and
 
 Now, let's say you have thousands of files to download and you left your computer running a loop overnight. What happens if there is an error with one of the elements of your loop? Your code will crash and stop at the iteration where the error happened. This results in lost time, as the loop could have continued with iterations that had no errors.
 
+To show this , we'll modify the second weather station in Cyprus, and then try to run our previous code.
+
 ```{r}
 # Breaking our data so we can show an error when trying to download data for a non-existant station
-station_inventory$stationId <- str_replace(station_inventory$stationId, "ROE00100898", "xxxxx")
+station_inventory$stationId <- str_replace(station_inventory$stationId, "CYE00100065", "xxxxx")
 ```
 
 ```{r}
 noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
 folder_path <- "data/raw/weather_stations/"
 country_stations <- station_inventory %>% 
-  filter(country == "RO") %>% 
+  filter(country == "CY") %>% 
   pull(stationId)
 
 for (station in country_stations) {
@@ -147,13 +149,13 @@ for (station in country_stations) {
 }
 ```
 
-To prevent our code to break when there's an error, we'll use the tryCatch() function inside our loop to catch any error and handle it in a particular way. It works like and if-else if-else statement, where you say "If there is no error, do this. If there's an error do this other thing." To show how this works, we'll modify the second weather station in Romania, and then try to run our previous code.
+To prevent our code to break when there's an error, we'll use the tryCatch() function inside our loop to catch any error and handle it in a particular way. It works like and if-else if-else statement, where you say "If there is no error, do this. If there's an error do this other thing."
 
 ```{r}
 noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
 folder_path <- "data/raw/weather_stations/"
 country_stations <- station_inventory %>% 
-  filter(country == "RO") %>% 
+  filter(country == "cy") %>% 
   pull(stationId)
 
 for (station in country_stations) {
@@ -178,7 +180,7 @@ for (station in country_stations) {
 }
 ```
 
-But this loop is getting confusing, and this code only works if I want to download data for Romania. If I want to download data for another country I'd have to copy and paste, which doesn't comply with our DRY principle. To make our code modular, we'll start using functions. First we'll write a function to download one file and handle possible errors. Then, we'll write a function to filter the countries we are interested in and return the corresponding vector of stationIds. Then, we'll use the map() function to replace our loop and make our code more succinct.
+But this loop is getting confusing, and this code only works if I want to download data for Cyprus. If I want to download data for another country I'd have to copy and paste, which doesn't comply with our DRY principle. To make our code modular, we'll start using functions. First we'll write a function to download one file and handle possible errors. Then, we'll write a function to filter the countries we are interested in and return the corresponding vector of stationIds. Then, we'll use the map() function to replace our loop and make our code more succinct.
 
 The basic structure of a function is:
 
@@ -218,10 +220,6 @@ single_download_noaa_ghcnm <- function(station) {
 Then you can create a function that filters only those stations in the countries you are interested, and runs the download function for each station.
 
 ```{r}
-
-```
-
-```{r}
 country_download_noaa_ghcnm <- function(data_path, countries) {
   station_inventory <- read_csv(data_path, show_col_types = FALSE)
   stationid_vector <- station_inventory %>% 
@@ -231,15 +229,14 @@ country_download_noaa_ghcnm <- function(data_path, countries) {
   for (i in stationid_vector) {
     single_download_noaa_ghcnm(i)
   }
-  print(paste0("Number of stations in ", countries, ": ", length(stationid_vector)))
 }
 ```
 
-We can try it with another country, Honduras (HO):
+We can try it with another country, Eritrea (ER):
 
 ```{r}
 country_download_noaa_ghcnm("data/processed/stationsInventory.csv",
-                            c("HO"))
+                            c("ER"))
 ```
 
 We'll learn one more useful thing about functions, default arguments. When creating a function, you can set default arguments, and give the user of the function the possibility to change the default behavior of a function.
@@ -285,12 +282,14 @@ country_download_noaa_ghcnm <- function(inventory_path, countries, print_result 
 
 ```{r}
 country_download_noaa_ghcnm("data/processed/stationsInventory.csv",
-                            c("HO", "RO"))
+                            c("CY", "ER"))
 ```
+
+Now changing the default argument to print the result of each downloaded file.
 
 ```{r}
 country_download_noaa_ghcnm("data/processed/stationsInventory.csv",
-                            c("HO", "RO", "BC"),
+                            c("CY", "ER", "ST"),
                             print_result = TRUE)
 ```
 
@@ -301,7 +300,7 @@ noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
 folder_path <- "data/raw/weather_stations/"
 
 ids <- station_inventory %>% 
-  filter(country == "BC") %>% 
+  filter(country == "TV") %>% 
   pull(stationId)
 
 origins <- paste0(noaa_url, ids, ".csv")

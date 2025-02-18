@@ -12,7 +12,7 @@ You only need data for certain weather stations, not all the weather stations in
 
 The first option will take you a long time, and can be troublesome to have the entire dataset that you don't need. Therefore, you go with option 2, but you want to do this efficiently using R, instead of downloading each individual file by clicking in the browser.
 
-For the sake of time and demonstration, we will only be downloading data from 3 small countries: Botswana (BC), Honduras (HO), and Romania (RO).
+For the sake of time and demonstration, we will only be downloading data from 3 small countries: Cyprus (CY), Eritrea (ER), and Saint Lucia (ST).
 
 ## Getting the list of weather stations
 
