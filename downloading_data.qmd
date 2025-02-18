@@ -26,6 +26,7 @@ station_inventory %>%
   filter(country == "RO") %>% 
   str()
 ```
+
 Ok, so Romania has 38 weather stations, let's download data for all of these. The naive approach or brute-force way of doing this is copying and pasting code to download one file at a time, like this:
 
 ```{r}
@@ -63,6 +64,7 @@ for (station in country_stations) {
 ```
 
 This looks good, so now let's do the loop to download the files
+
 ```{r}
 noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
 folder_path <- "data/raw/weather_stations/"
@@ -73,11 +75,11 @@ country_stations <- station_inventory %>%
 for (station in country_stations) {
   download.file(
     url = paste0(noaa_url, station, ".csv"),
-    destfile = paste0(folder_path, station, ".csv"),
-    quiet = TRUE
+    destfile = paste0(folder_path, station, ".csv")
   )
 }
 ```
+
 There are multiple ways we can make this code for downloading data more efficient and readable. To start, let's see how to skip downloading data multiple times if the files are already in your computer. With this, we will learn about conditional statements, which are greatly useful when writing loops and functions.
 
 ```{r}
@@ -93,18 +95,19 @@ for (station in country_stations) {
   
   # Check if file is already in our data path
   if (file.exists(file_path)) {
-    print(paste0("File ", station, ".csv already in folder. Skipping to next"))
+    print(paste0("File ", station, ".csv already in folder. Skipping"))
   } else {
     download.file(
     url = paste0(noaa_url, station, ".csv"),
     destfile = file_path,
     quiet = TRUE
   )
+    print(paste0("File ", station, ".csv downloaded"))
   }
 }
 ```
-If you have multiple conditions, you would use a combination of if, else if, and else statements like this:
-if () {
+
+If you have multiple conditions, you would use a combination of if, else if, and else statements like this: if () {
 
 } else if () {
 
@@ -117,7 +120,9 @@ Now, let's say you have thousands of files to download and you left your compute
 ```{r}
 # Breaking our data so we can show an error when trying to download data for a non-existant station
 station_inventory$stationId <- str_replace(station_inventory$stationId, "ROE00100898", "xxxxx")
+```
 
+```{r}
 noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
 folder_path <- "data/raw/weather_stations/"
 country_stations <- station_inventory %>% 
@@ -137,12 +142,12 @@ for (station in country_stations) {
     destfile = file_path,
     quiet = TRUE
   )
+    print(paste0("File ", station, ".csv downloaded"))
   }
 }
 ```
 
 To prevent our code to break when there's an error, we'll use the tryCatch() function inside our loop to catch any error and handle it in a particular way. It works like and if-else if-else statement, where you say "If there is no error, do this. If there's an error do this other thing." To show how this works, we'll modify the second weather station in Romania, and then try to run our previous code.
-
 
 ```{r}
 noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
@@ -157,11 +162,14 @@ for (station in country_stations) {
   
   # Check if file is already in our data path
   if (file.exists(file_path)) {
-    next
+    print(paste0("File ", station, ".csv already in folder. Skipping to next"))
   } else {
     
     tryCatch(
-      download.file(url = paste0(noaa_url, station, ".csv"), destfile = file_path, quiet = TRUE), error = function(e) {
+      expr = {download.file(url = paste0(noaa_url, station, ".csv"), destfile = file_path, quiet = TRUE)
+        print(paste0("File ", station, ".csv downloaded"))
+        },
+      error = function(e) {
         print(paste0("There was an error trying to download data for stationId: ", station, ". Here is the error message: "))
         print(conditionMessage(e))
       }
@@ -173,6 +181,7 @@ for (station in country_stations) {
 But this loop is getting confusing, and this code only works if I want to download data for Romania. If I want to download data for another country I'd have to copy and paste, which doesn't comply with our DRY principle. To make our code modular, we'll start using functions. First we'll write a function to download one file and handle possible errors. Then, we'll write a function to filter the countries we are interested in and return the corresponding vector of stationIds. Then, we'll use the map() function to replace our loop and make our code more succinct.
 
 The basic structure of a function is:
+
 ```{r}
 my_function_name <- function(argument1, argument2) {
   result <- argument1+argument2
@@ -181,29 +190,36 @@ my_function_name <- function(argument1, argument2) {
 my_function_name(4, 6)
 my_function_name(argument1 = 4, argument2 = 6)
 ```
+
 We'll create a function their requires only one argument, the stationId, and then downloads monthly precipitation data from ghcnm, handling possible errors.
 
 ```{r}
-single_download_noaa_ghcnm <- function(stationId) {
+single_download_noaa_ghcnm <- function(station) {
   noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
   folder_path <- "data/raw/weather_stations/"
-  file_path <- paste0(folder_path, stationId, ".csv")
-  error_message <- paste0("There was an error trying to download data for stationId: ", stationId, ". Here is the error message: ")
+  file_path <- paste0(folder_path, station, ".csv")
   if (file.exists(file_path)) {
-    
+    message <- paste0("File ", station, ".csv already in folder. Skipping to next")
   } else {
   tryCatch(
-      download.file(url = paste0(noaa_url, stationId, ".csv"), destfile = file_path, quiet = TRUE), error = function(e) {
-        print(error_message)
+      {download.file(url = paste0(noaa_url, station, ".csv"), destfile = file_path, quiet = TRUE)
+        message <- paste0("File ", station, ".csv downloaded")
+          },
+      error = function(e) {
+        message <- paste0("There was an error trying to download data for stationId: ", station, ". Here is the error message: ")
         print(conditionMessage(e))
       }
     )
   }
+  print(message)
 }
 ```
 
-
 Then you can create a function that filters only those stations in the countries you are interested, and runs the download function for each station.
+
+```{r}
+
+```
 
 ```{r}
 country_download_noaa_ghcnm <- function(data_path, countries) {
@@ -215,27 +231,83 @@ country_download_noaa_ghcnm <- function(data_path, countries) {
   for (i in stationid_vector) {
     single_download_noaa_ghcnm(i)
   }
-  return(paste0("Number of stations in ", countries, ": ", length(stationid_vector)))
+  print(paste0("Number of stations in ", countries, ": ", length(stationid_vector)))
 }
 ```
 
 We can try it with another country, Honduras (HO):
+
 ```{r}
 country_download_noaa_ghcnm("data/processed/stationsInventory.csv",
-                            c("HO", "RO", "BC"))
+                            c("HO"))
 ```
 
+We'll learn one more useful thing about functions, default arguments. When creating a function, you can set default arguments, and give the user of the function the possibility to change the default behavior of a function.
 
-
+For this example, we'll add a default argument print_result = FALSE in the single_download_noaa_ghcnm function, to not print the resulting message for the download of each file.
 
 ```{r}
-multi_download("https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/ROXLP330732.csv")
+single_download_noaa_ghcnm <- function(station, print_result = FALSE) {
+  noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
+  folder_path <- "data/raw/weather_stations/"
+  file_path <- paste0(folder_path, station, ".csv")
+  if (file.exists(file_path)) {
+    message <- paste0("File ", station, ".csv already in folder. Skipping to next")
+  } else {
+  tryCatch(
+      {download.file(url = paste0(noaa_url, station, ".csv"), destfile = file_path, quiet = TRUE)
+        message <- paste0("File ", station, ".csv downloaded")
+          },
+      error = function(e) {
+        message <- paste0("There was an error trying to download data for stationId: ", station, ". Here is the error message: ")
+        print(conditionMessage(e))
+      }
+    )
+  }
+  if (print_result) {
+    print(message)
+  }
+}
 ```
 
+```{r}
+country_download_noaa_ghcnm <- function(inventory_path, countries, print_result = FALSE) {
+  station_inventory <- read_csv(inventory_path, show_col_types = FALSE)
+  stationid_vector <- station_inventory %>% 
+  filter(country %in% countries) %>% 
+  pull(stationId)
+  
+  for (i in stationid_vector) {
+    single_download_noaa_ghcnm(i, print_result)
+  }
+}
+```
 
+```{r}
+country_download_noaa_ghcnm("data/processed/stationsInventory.csv",
+                            c("HO", "RO"))
+```
 
+```{r}
+country_download_noaa_ghcnm("data/processed/stationsInventory.csv",
+                            c("HO", "RO", "BC"),
+                            print_result = TRUE)
+```
 
+This process of downloading files was only educational for practicing loops and functions. When you actually have to download multiple files from the internet, we recommend to use the "curl" package and its [multi_download function](https://jeroen.r-universe.dev/curl/doc/manual.html#multi_download), which has all this functionality of error-handling and concurrent downloads.
 
+```{r}
+noaa_url <- "https://www.ncei.noaa.gov/data/ghcnm/v4/precipitation/access/"
+folder_path <- "data/raw/weather_stations/"
 
+ids <- station_inventory %>% 
+  filter(country == "BC") %>% 
+  pull(stationId)
 
+origins <- paste0(noaa_url, ids, ".csv")
+dests <- paste0(folder_path, ids, ".csv")
 
+results <- curl::multi_download(urls = origins, destfiles = dests)
+```
+
+Now you can make your code cleaner by moving some of this functions to a separate R script and calling this functions with source().

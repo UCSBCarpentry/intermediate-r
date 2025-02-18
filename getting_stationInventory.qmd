@@ -43,7 +43,7 @@ station_inventory <- read_fwf(
 # Rename columns
 colnames(station_inventory) <- c("stationId", "latitude", "longitude",
                                   "elevation","state", "stationName",
-                                  "wmoId", "firstYear", "secondYear")
+                                  "wmoId", "firstYear", "lastYear")
 ```
 
 Create a column with the country code, which is the first two characters of stationId
