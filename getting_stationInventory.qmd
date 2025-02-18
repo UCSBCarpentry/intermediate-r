@@ -72,7 +72,39 @@ toc()
 # station_inventory$country =  str_sub(station_inventory$stationId, 1, 2)
 ```
 
-**TODO: Write here about vectorized operations in R**
+Why was there such a difference in the time it took to run these two functions? The answer is a concept called vectorization. Vectorization means that the function will operate on all elements of a vector without needing to loop through and act on each element individually. Let's look at a simplified example to see how this works.
+
+```{r}
+#make a vector
+x <- 1:4
+x*2
+```
+
+The multiplication happened to each element of our vector. We can add two vectors
+
+```{r}
+#make second vector
+y <- 6:9
+tic()
+x+y
+toc()
+```
+
+Here each element of our vector x was added to the corresponding element of vector y. We could perform this addition using a loop
+
+```{r}
+#make new, empty vector
+output_vector <- c()
+#make loop
+tic()
+for (i in 1:4) {
+  output_vector[i] <- x[i]+y[i]
+}
+output_vector
+toc()
+```
+
+The time difference here is quite small. However, if we were using a much larger data set, this small difference would become significant. It is worth noting that comparison operators, logical operators, and most functions operate element-wise on vectors. Vectorized operations also work element-wise on matrices but be careful if you want to do matrix operations (ex. multiplication) rather than element-wise operations. Thus, it is important to try to use vectorized operations where you can to help your code be more efficient.
 
 Now that we have our inventory of weather stations with column names and country codes, let's save it as a csv to reuse later.
 
