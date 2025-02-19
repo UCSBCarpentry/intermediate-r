@@ -1,0 +1,58 @@
+---
+title: "For vs Apply vs Map"
+format: html
+editor: visual
+---
+
+## Libraries
+
+```{r}
+library(tidyverse)
+library(dplyr)
+```
+
+## For Loops 
+
+There are a few "golden rules" for creating effective for loops in R. These are:
+
+1.  Don't use a loop when a vectorized alternative exists
+2.  Don't grow objects (via c, cbind, etc.) during the loop–R has to create a new object and copy across the information just to add a new element or row/column.
+3.  Allocate an object to hold the results and fill it during the loop
+
+## Apply
+
+```{r}
+?apply
+```
+
+R has a family of functions, the `apply` family, which can be used like for loops to perform an action on multiple chunks of data.
+
+The `apply` family members include
+
+-   `apply` - apply over the margins of an array (e.g. the rows or columns of a matrix)
+
+-   `lapply` - apply over an object and return list
+
+-   `sapply` - apply over an object and return a simplified object (an array) if possible
+
+-   `vapply` - similar to `sapply` but you specify the type of object returned by the iterations
+
+Each of these has an argument `FUN` which takes a function to apply to each element of the object.
+
+Deciding whether to use `for` or one of the `apply` family is really personal preference. Using an `apply` family function forces to you encapsulate your operations as a function rather than separate calls with `for`. `for` loops are often more natural in some circumstances; for several related operations, a `for` loop will avoid you having to pass in a lot of extra arguments to your function.
+
+## Map
+
+```{r}
+?map
+```
+
+Tidyverse and the purrr package's approach to apply. "The map functions transform their input by applying a function to each element and returning a vector the same length as the input." "map() returns a list, [`map_int()`](https://purrr.tidyverse.org/reference/map.html) returns an integer vector, and [`map_chr()`](https://purrr.tidyverse.org/reference/map.html) returns a character vector, for example. [`map_dfr()`](https://purrr.tidyverse.org/reference/map_dfr.html) iterates over an input and applies it to a function or process defined by the user, then row-binds the result into a single data frame." 
+
+I use map_dfr() frequently in my own work to collect multiple years of census data from the census API with one function rather than repeating the code for each year. The purrr syntax requires a few things to work.
+
+1.  A numeric vector. For example, a vector containing the years I want to collect data for.
+2.  Within map_dfr() we need a few more pieces of information
+    1.  argument that the function will iterate over. In the census example, this would be our vector of years.
+    2.  A formula specified with "\~" and "{}." The code inside the brackets will be run once for each element in the vector. The output is combined into a single output data frame. So in the census example, we collect ACS data for each year in our vector.
+    3.  An optional .id argument that creates a column in the output data frame that contains the names of the input object. So in our example it would contain the corresponding year value.
