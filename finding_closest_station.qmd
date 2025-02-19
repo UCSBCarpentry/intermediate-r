@@ -10,6 +10,7 @@ editor: visual
 2.  Instead of a loop over each row, use a vectorized function from the tidyverse, namely dplyr::mutate(). Count how much time it takes.
 3.  You've found an efficient method to calculate the distance to a point. But what if you need to find the nearest station for another point? Transform your loop into a function which takes five arguments: the dataframe and two of its columns with latitude and longitude values, and a latitude and a longitude for a point.
 4.  Improve your function by handling possible errors. First show a warning message if the latitude is outside of (-90, 90) or if longitude is outside of (-180,180) (hint: use conditionals and the warning() function). Second, raise an error if the latitude or longitude are not of type double (hint: use conditionals, the function !is.double() to see if the the value provided is not of type double, and the function stop() to stop execution of the function and raise an error).
+5.  Copy this function to your "helper_functions.R script". Create a new script called finding_closest_station, load the functions from "helper_functions.R", and use the function you created in step 4 for any latitude and longitude you want to know the closest weather station.
 
 ```{r}
 library(tidyverse)
